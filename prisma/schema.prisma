@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+//generator client {
+//  provider = "prisma-client"
+//  output   = "../src/generated/prisma"
+//}
+
+//datasource db {
+//  provider = "postgresql"
+//}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Korisnik {
+  idkorisnik  Int           @id @default(autoincrement())
+  ime         String
+  prezime     String
+  email       String        @unique
+  lozinka     String
+  rezervacije Rezervacija[] // Veza 1 : N 
+  recenzije   Recenzija[]   // Veza 1 : N 
+}
+
+model Preduzece {
+  idpreduzece Int         @id @default(autoincrement())
+  email       String      @unique
+  lozinka     String
+  naziv       String
+  brojusluga  Int         @default(0)
+  verifikovan Boolean     @default(false)
+  tip         String      // Vrednosti: SAMOSTALAC ili USLUZNO_PREDUZECE (izvor [6])
+  usluge      Usluga[]    // Veza 1 : N 
+  radnici     Radnik[]    // Veza 1 : N 
+  recenzije   Recenzija[] // Veza 1 : N 
+}
+
+model Radnik {
+  idradnik    Int       @id @default(autoincrement())
+  ime         String
+  prezime     String
+  idpreduzece Int
+  preduzece   Preduzece @relation(fields: [idpreduzece], references: [idpreduzece])
+  termini     Termin[]  // Veza 1 : N 
+}
+
+model Usluga {
+  idusluga    Int       @id @default(autoincrement())
+  naziv       String
+  opis        String
+  cena        Float     // double u dokumentaciji 
+  slikaurl    String?
+  idpreduzece Int
+  preduzece   Preduzece @relation(fields: [idpreduzece], references: [idpreduzece])
+  termini     Termin[]  // Veza 1 : N 
+}
+
+model Termin {
+  idtermin    Int          @id @default(autoincrement())
+  datumvreme  DateTime     // LocalDateTime u dokumentaciji 
+  idusluga    Int
+  idradnik    Int
+  usluga      Usluga       @relation(fields: [idusluga], references: [idusluga])
+  radnik      Radnik       @relation(fields: [idradnik], references: [idradnik])
+  rezervacija Rezervacija? // Veza 1 : N 
+}
+
+model Rezervacija {
+  idrezervacija Int      @id @default(autoincrement())
+  napomena      String?
+  status        String   // Vrednosti: CREATED, COMPLETED 
+  idkorisnik    Int
+  idtermin      Int      @unique
+  korisnik      Korisnik @relation(fields: [idkorisnik], references: [idkorisnik])
+  termin        Termin   @relation(fields: [idtermin], references: [idtermin])
+}
+
+model Recenzija {
+  idrecenzija Int       @id @default(autoincrement())
+  ocena       Int
+  komentar    String
+  idkorisnik  Int
+  idpreduzece Int
+  korisnik    Korisnik  @relation(fields: [idkorisnik], references: [idkorisnik])
+  preduzece   Preduzece @relation(fields: [idpreduzece], references: [idpreduzece])
+}
