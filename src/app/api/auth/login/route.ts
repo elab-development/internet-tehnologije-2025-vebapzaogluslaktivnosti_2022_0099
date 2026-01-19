@@ -10,24 +10,39 @@ export async function POST(req: Request) {
   try {
     const { email, lozinka } = await req.json();
 
-    // 1. Provera u tabeli Korisnik (Klijenti)
-    let authenticatedUser = await prisma.korisnik.findUnique({ where: { email } });
+    // 1. Validacija unosa - provera da li su polja prisutna 
+    if (!email || !lozinka) {
+      return NextResponse.json({ message: "Email i lozinka su obavezni." }, { status: 400 });
+    }
+
+    // 2. Traženje korisnika u obe tabele (Korisnik i Preduzeće)
+    let authenticatedUser: any = await prisma.korisnik.findUnique({ where: { email } });
     let uloga = 'KORISNIK';
 
-    // 2. Ako nije klijent, provera u tabeli Preduzeće (Samostalci/Firme)
     if (!authenticatedUser) {
-      authenticatedUser = (await prisma.preduzece.findUnique({ where: { email } })) as any;
-      if (authenticatedUser) uloga = authenticatedUser.tip; // Uzima tip: SAMOSTALAC ili USLUZNO_PREDUZECE
+      authenticatedUser = await prisma.preduzece.findUnique({ where: { email } });
+      if (authenticatedUser) {
+        uloga = authenticatedUser.tip; // SAMOSTALAC ili USLUZNO_PREDUZECE
+      }
     }
 
-    if (!authenticatedUser || !(await bcrypt.compare(lozinka, authenticatedUser.lozinka))) {
-      return NextResponse.json({ message: "Neuspesna prijava. Losi kredencijali." }, { status: 401 });
+    // 3. Provera da li korisnik uopšte postoji
+    if (!authenticatedUser) {
+      return NextResponse.json({ message: "Pogrešan email ili lozinka." }, { status: 401 });
     }
 
-    // 3. Generisanje JWT tokena (Nefunkcionalni zahtev za bezbednost)
+    // 4. KLJUČNI KORAK: Provera lozinke 
+    const isPasswordCorrect = await bcrypt.compare(lozinka, authenticatedUser.lozinka);
+    
+    if (!isPasswordCorrect) {
+      // Ako lozinka nije tačna, vraćamo 401 i ne idemo dalje!
+      return NextResponse.json({ message: "Pogrešan email ili lozinka." }, { status: 401 });
+    }
+
+    // 5. Ako je sve u redu, generisanje JWT tokena 
     const token = jwt.sign(
       { 
-        userId: (authenticatedUser as any).idkorisnik || (authenticatedUser as any).idpreduzece, 
+        userId: authenticatedUser.idkorisnik || authenticatedUser.idpreduzece, 
         email: authenticatedUser.email, 
         uloga 
       },
@@ -35,6 +50,7 @@ export async function POST(req: Request) {
       { expiresIn: '1h' }
     );
 
+    // 6. Slanje uspešnog odgovora sa JSON podacima 
     return NextResponse.json({ 
       message: "Uspesna prijava.", 
       token, 
