@@ -59,7 +59,7 @@ model Usluga {
   naziv       String
   opis        String
   cena        Float     // double u dokumentaciji 
-  slikaurl    String?
+  slikaurl    String? @db.Text
   idpreduzece Int
   preduzece   Preduzece @relation(fields: [idpreduzece], references: [idpreduzece])
   termini     Termin[]  // Veza 1 : N 

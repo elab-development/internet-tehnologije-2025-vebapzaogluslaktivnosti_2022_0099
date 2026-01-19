@@ -1,9 +1,11 @@
 "use client";
 import { useState } from 'react';
 import { useAuth } from './AuthProvider';
+import { useRouter } from 'next/navigation'; 
 
 export default function AuthForm() {
   const [isLogin, setIsLogin] = useState(true);
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [lozinka, setLozinka] = useState('');
   const [ime, setIme] = useState('');
@@ -32,7 +34,9 @@ export default function AuthForm() {
       setUser(data.user);
       localStorage.setItem('user', JSON.stringify(data.user));
       if (data.token) localStorage.setItem('token', data.token);
-      alert(isLogin ? "Uspešna prijava!" : "Uspešna registracija!");
+      //alert(isLogin ? "Uspešna prijava!" : "Uspešna registracija!");
+      router.push('/'); 
+      router.refresh(); 
     } else {
       alert(data.message);
     }

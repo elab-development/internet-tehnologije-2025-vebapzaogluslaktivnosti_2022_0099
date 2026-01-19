@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       message: "Uspesna prijava.", 
       token, 
-      user: { email: authenticatedUser.email, uloga } 
+      user: {id: authenticatedUser.idkorisnik || authenticatedUser.idpreduzece, email: authenticatedUser.email, uloga } 
     }, { status: 200 });
 
   } catch (error: any) {
