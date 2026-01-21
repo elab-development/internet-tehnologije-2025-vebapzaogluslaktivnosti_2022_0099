@@ -26,8 +26,8 @@ export async function POST(req: Request) {
           email, 
           naziv, 
           lozinka: hashedLozinka, 
-          tip: uloga, // Ovde se mapira na Enumeraciju Tip [9]
-          verifikovan: false // Početno stanje pre provere kriterijuma za bedž [10]
+          tip: uloga, // Ovde se mapira na Enumeraciju Tip 
+          verifikovan: false // Početno stanje pre provere kriterijuma za bedž 
         }
       });
       return NextResponse.json({ message: "Uspesna registracija preduzeca/samostalca.", user: novoPreduzece }, { status: 201 });
