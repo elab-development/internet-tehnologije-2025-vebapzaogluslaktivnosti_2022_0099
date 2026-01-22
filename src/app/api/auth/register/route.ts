@@ -1,40 +1,104 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/db';
+import { korisniciTable, preduzecaTable, tipEnum } from '@/db/schema';
 import bcrypt from 'bcryptjs';
-
-const prisma = new PrismaClient();
+import { type InferModel } from 'drizzle-orm';
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { email, lozinka, ime, prezime, naziv, uloga } = body; // uloga: 'KORISNIK', 'SAMOSTALAC' ili 'USLUZNO_PREDUZECE'
+    const { email, lozinka, ime, prezime, naziv, uloga } = body;
+
+    if (!email || !lozinka || !uloga) {
+      return NextResponse.json(
+        { message: "Nedostaju obavezna polja." },
+        { status: 400 }
+      );
+    }
 
     const hashedLozinka = await bcrypt.hash(lozinka, 10);
 
-    // LOGIKA ZA KLIJENTA (Korisnik tabela)
     if (uloga === 'KORISNIK') {
-      const noviKorisnik = await prisma.korisnik.create({
-        data: { email, ime, prezime, lozinka: hashedLozinka }
-      });
-      return NextResponse.json({ message: "Uspesna registracija korisnika.", user: noviKorisnik }, { status: 201 });
-    } 
+      if (!ime || !prezime) {
+        return NextResponse.json(
+          { message: "Ime i prezime su obavezni za korisnika." },
+          { status: 400 }
+        );
+      }
 
-    // LOGIKA ZA PRUŽAOCA USLUGA (Preduzeće tabela)
-    if (uloga === 'SAMOSTALAC' || uloga === 'USLUZNO_PREDUZECE') {
-      const novoPreduzece = await prisma.preduzece.create({
-        data: { 
-          email, 
-          naziv, 
-          lozinka: hashedLozinka, 
-          tip: uloga, // Ovde se mapira na Enumeraciju Tip 
-          verifikovan: false // Početno stanje pre provere kriterijuma za bedž 
-        }
-      });
-      return NextResponse.json({ message: "Uspesna registracija preduzeca/samostalca.", user: novoPreduzece }, { status: 201 });
+      type KorisnikInsert = InferModel<typeof korisniciTable, "insert">;
+      type KorisnikSelect = InferModel<typeof korisniciTable, "select">;
+
+      const [noviKorisnik]: KorisnikSelect[] = await db
+        .insert(korisniciTable)
+        .values({
+          email,
+          lozinka: hashedLozinka,
+          ime,
+          prezime,
+        } as KorisnikInsert)
+        .returning();
+
+      return NextResponse.json(
+        {
+          message: "Uspešna registracija korisnika.",
+          user: {
+            id: noviKorisnik.idkorisnik,
+            email: noviKorisnik.email,
+            uloga: 'KORISNIK',
+          },
+        },
+        { status: 201 }
+      );
     }
 
-    return NextResponse.json({ message: "Neispravna uloga." }, { status: 400 });
+    if (uloga === 'SAMOSTALAC' || uloga === 'USLUZNO_PREDUZECE') {
+      if (!naziv) {
+        return NextResponse.json(
+          { message: "Naziv je obavezan za preduzeće." },
+          { status: 400 }
+        );
+      }
+
+      type PreduzeceInsert = InferModel<typeof preduzecaTable, "insert">;
+      type PreduzeceSelect = InferModel<typeof preduzecaTable, "select">;
+
+      const [novoPreduzece]: PreduzeceSelect[] = await db
+        .insert(preduzecaTable)
+        .values({
+          email,
+          lozinka: hashedLozinka,
+          naziv,
+          tip: uloga as typeof tipEnum.enumName,
+          verifikovan: false,
+        } as PreduzeceInsert)
+        .returning();
+
+      return NextResponse.json(
+        {
+          message: "Uspešna registracija preduzeća.",
+          user: {
+            id: novoPreduzece.idpreduzece,
+            email: novoPreduzece.email,
+            uloga: uloga,
+          },
+        },
+        { status: 201 }
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Neispravna uloga." },
+      { status: 400 }
+    );
+
   } catch (error: any) {
-    return NextResponse.json({ message: "Email je vec zauzet ili je doslo do greske.", error: error.message }, { status: 500 });
+    return NextResponse.json(
+      {
+        message: "Email je već zauzet ili je došlo do greške.",
+        error: error.message,
+      },
+      { status: 500 }
+    );
   }
 }

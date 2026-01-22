@@ -18,7 +18,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql" 
   url      = env("DATABASE_URL")
 }
 
@@ -94,3 +94,5 @@ model Recenzija {
   korisnik    Korisnik  @relation(fields: [idkorisnik], references: [idkorisnik])
   preduzece   Preduzece @relation(fields: [idpreduzece], references: [idpreduzece])
 }
+
+

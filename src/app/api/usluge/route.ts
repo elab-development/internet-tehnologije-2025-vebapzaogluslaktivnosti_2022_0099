@@ -1,38 +1,69 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from '@/db';
+import { uslugeTable, preduzecaTable } from '@/db/schema';
+import { type InferModel } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
-const prisma = new PrismaClient();
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { naziv, opis, cena, slikaurl, idpreduzece } = body;
 
-    // Provera obaveznih polja prema modelu 
     if (!naziv || !cena || !idpreduzece) {
-      return NextResponse.json({ message: "Nedostaju podaci." }, { status: 400 });
+      return NextResponse.json(
+        { message: "Nedostaju obavezni podaci." },
+        { status: 400 }
+      );
     }
 
-    const novaUsluga = await prisma.usluga.create({
-      data: {
-        naziv,
-        opis,
-        cena: parseFloat(cena),
-        slikaurl,
-        idpreduzece: parseInt(idpreduzece)
-      }
-    });
+    type UslugaInsert = InferModel<typeof uslugeTable, "insert">;
+    type UslugaSelect = InferModel<typeof uslugeTable, "select">;
 
-    return NextResponse.json({ message: "Uspesno kreiranje.", usluga: novaUsluga }, { status: 201 });
+    const [novaUsluga]: UslugaSelect[] = await db
+      .insert(uslugeTable)
+      .values({
+        naziv,
+        opis: opis || "",
+        cena: parseFloat(cena),
+        slikaurl: slikaurl || null,
+        idpreduzece: Number(idpreduzece),
+      } as UslugaInsert)
+      .returning();
+
+    return NextResponse.json(
+      { message: "Uspešno kreirana usluga.", usluga: novaUsluga },
+      { status: 201 }
+    );
   } catch (error: any) {
-    return NextResponse.json({ message: "Neuspesno kreiranje.", error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: "Neuspešno kreiranje usluge.", error: error.message },
+      { status: 500 }
+    );
   }
 }
 
-// GET metoda za prikaz svih usluga na početnoj strani
 export async function GET() {
-  const usluge = await prisma.usluga.findMany({
-    include: { preduzece: true } // Uključuje podatke o firmi koja nudi uslugu
-  });
-  return NextResponse.json(usluge);
+  try {
+    const usluge = await db
+      .select({
+        idusluga: uslugeTable.idusluga,
+        naziv: uslugeTable.naziv,
+        opis: uslugeTable.opis,
+        cena: uslugeTable.cena,
+        slikaurl: uslugeTable.slikaurl,
+        idpreduzece: uslugeTable.idpreduzece,
+        preduzece_naziv: preduzecaTable.naziv,
+      })
+      .from(uslugeTable)
+      .innerJoin(preduzecaTable, eq(preduzecaTable.idpreduzece, uslugeTable.idpreduzece)); 
+
+    return NextResponse.json(usluge);
+  } catch (error: any) {
+    return NextResponse.json(
+      { message: "Greška pri dohvaćanju usluga.", error: error.message },
+      { status: 500 }
+    );
+  }
 }
+

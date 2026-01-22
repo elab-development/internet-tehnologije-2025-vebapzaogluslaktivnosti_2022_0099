@@ -1,0 +1,259 @@
+{
+  "id": "032f6607-256d-4e32-8e8f-8a986d0a0d86",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.preduzeca": {
+      "name": "preduzeca",
+      "schema": "",
+      "columns": {
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lozinka": {
+          "name": "lozinka",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "naziv": {
+          "name": "naziv",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verifikovan": {
+          "name": "verifikovan",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "tip": {
+          "name": "tip",
+          "type": "tip",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "preduzeca_email_unique": {
+          "name": "preduzeca_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.radnici": {
+      "name": "radnici",
+      "schema": "",
+      "columns": {
+        "idradnik": {
+          "name": "idradnik",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ime": {
+          "name": "ime",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prezime": {
+          "name": "prezime",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "radnici_idpreduzece_preduzeca_idpreduzece_fk": {
+          "name": "radnici_idpreduzece_preduzeca_idpreduzece_fk",
+          "tableFrom": "radnici",
+          "tableTo": "preduzeca",
+          "columnsFrom": [
+            "idpreduzece"
+          ],
+          "columnsTo": [
+            "idpreduzece"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.termini": {
+      "name": "termini",
+      "schema": "",
+      "columns": {
+        "idtermin": {
+          "name": "idtermin",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "datumvreme": {
+          "name": "datumvreme",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idradnik": {
+          "name": "idradnik",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "termini_idradnik_radnici_idradnik_fk": {
+          "name": "termini_idradnik_radnici_idradnik_fk",
+          "tableFrom": "termini",
+          "tableTo": "radnici",
+          "columnsFrom": [
+            "idradnik"
+          ],
+          "columnsTo": [
+            "idradnik"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "termini_idpreduzece_preduzeca_idpreduzece_fk": {
+          "name": "termini_idpreduzece_preduzeca_idpreduzece_fk",
+          "tableFrom": "termini",
+          "tableTo": "preduzeca",
+          "columnsFrom": [
+            "idpreduzece"
+          ],
+          "columnsTo": [
+            "idpreduzece"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usluge": {
+      "name": "usluge",
+      "schema": "",
+      "columns": {
+        "idusluga": {
+          "name": "idusluga",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "naziv": {
+          "name": "naziv",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opis": {
+          "name": "opis",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cena": {
+          "name": "cena",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "usluge_idpreduzece_preduzeca_idpreduzece_fk": {
+          "name": "usluge_idpreduzece_preduzeca_idpreduzece_fk",
+          "tableFrom": "usluge",
+          "tableTo": "preduzeca",
+          "columnsFrom": [
+            "idpreduzece"
+          ],
+          "columnsTo": [
+            "idpreduzece"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.tip": {
+      "name": "tip",
+      "schema": "public",
+      "values": [
+        "SAMOSTALAC",
+        "USLUZNO_PREDUZECE"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

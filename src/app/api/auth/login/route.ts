@@ -1,63 +1,110 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { db } from "@/db";
+import { korisniciTable, preduzecaTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
-const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'tvoja_tajna_sifra';
 
 export async function POST(req: Request) {
   try {
     const { email, lozinka } = await req.json();
 
-    // 1. Validacija unosa - provera da li su polja prisutna 
+    //  Validacija
     if (!email || !lozinka) {
-      return NextResponse.json({ message: "Email i lozinka su obavezni." }, { status: 400 });
+      return NextResponse.json(
+        { message: "Email i lozinka su obavezni." },
+        { status: 400 }
+      );
     }
 
-    // 2. Traženje korisnika u obe tabele (Korisnik i Preduzeće)
-    let authenticatedUser: any = await prisma.korisnik.findUnique({ where: { email } });
+    //  Traženje korisnika u tabeli KORISNICI
+    const korisnikResult = await db
+      .select()
+      .from(korisniciTable)
+      .where(eq(korisniciTable.email, email))
+      .limit(1);
+
+    let authenticatedUser: any = korisnikResult[0];
     let uloga = 'KORISNIK';
 
+    //  Ako nije korisnik → tražimo u PREDUZEĆIMA
     if (!authenticatedUser) {
-      authenticatedUser = await prisma.preduzece.findUnique({ where: { email } });
+      const preduzeceResult = await db
+        .select()
+        .from(preduzecaTable)
+        .where(eq(preduzecaTable.email, email))
+        .limit(1);
+
+      authenticatedUser = preduzeceResult[0];
+
       if (authenticatedUser) {
-        uloga = authenticatedUser.tip; // SAMOSTALAC ili USLUZNO_PREDUZECE
+        uloga = authenticatedUser.tip; // SAMOSTALAC | USLUZNO_PREDUZECE
+
       }
+      console.log("EMAIL:", email);
+      console.log("USER FROM DB:", authenticatedUser);
+      console.log("HASH FROM DB:", authenticatedUser?.lozinka);
     }
 
-    // 3. Provera da li korisnik uopšte postoji
+    //  Ako ne postoji
     if (!authenticatedUser) {
-      return NextResponse.json({ message: "Pogrešan email ili lozinka." }, { status: 401 });
+      return NextResponse.json(
+        { message: "Pogrešan email ili lozinka." },
+        { status: 401 }
+      );
     }
 
-    // 4. KLJUČNI KORAK: Provera lozinke 
-    const isPasswordCorrect = await bcrypt.compare(lozinka, authenticatedUser.lozinka);
-    
+
+    //  Provera lozinke
+    const isPasswordCorrect = await bcrypt.compare(
+      lozinka,
+      authenticatedUser.lozinka
+    );
+
     if (!isPasswordCorrect) {
-      // Ako lozinka nije tačna, vraćamo 401 i ne idemo dalje!
-      return NextResponse.json({ message: "Pogrešan email ili lozinka." }, { status: 401 });
+      return NextResponse.json(
+        { message: "Pogrešan email ili lozinka." },
+        { status: 401 }
+      );
     }
 
-    // 5. Ako je sve u redu, generisanje JWT tokena 
+    //  JWT
     const token = jwt.sign(
-      { 
-        userId: authenticatedUser.idkorisnik || authenticatedUser.idpreduzece, 
-        email: authenticatedUser.email, 
-        uloga 
+      {
+        userId: authenticatedUser.id,
+        email: authenticatedUser.email,
+        uloga
       },
       JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    // 6. Slanje uspešnog odgovora sa JSON podacima 
-    return NextResponse.json({ 
-      message: "Uspesna prijava.", 
-      token, 
-      user: {id: authenticatedUser.idkorisnik || authenticatedUser.idpreduzece, email: authenticatedUser.email, uloga } 
-    }, { status: 200 });
+    let id1: number;
+    if (uloga === 'KORISNIK') {
+      id1 = authenticatedUser.idkorisnik;
+    } else {
+      id1 = authenticatedUser.idpreduzece;
+    }
+    //  Odgovor
+    return NextResponse.json(
+      {
+        message: "Uspešna prijava.",
+        token,
+        user: {
+          id: id1,
+          email: authenticatedUser.email,
+          uloga
+        }
+      },
+      { status: 200 }
+    );
 
   } catch (error: any) {
-    return NextResponse.json({ message: "Greska na serveru.", error: error.message }, { status: 500 });
+    return NextResponse.json(
+      { message: "Greška na serveru.", error: error.message },
+      { status: 500 }
+    );
   }
 }
