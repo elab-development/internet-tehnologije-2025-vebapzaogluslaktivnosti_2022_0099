@@ -15,6 +15,20 @@
       "when": 1769082809782,
       "tag": "0001_busy_bloodstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769176027912,
+      "tag": "0002_cultured_living_lightning",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769193058869,
+      "tag": "0003_safe_tattoo",
+      "breakpoints": true
     }
   ]
 }

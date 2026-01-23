@@ -25,7 +25,7 @@ export const korisniciTable = pgTable("korisnici", {
   ime: varchar("ime", { length: 100 }).notNull(),
   prezime: varchar("prezime", { length: 100 }).notNull(),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  lozinka: varchar("lozinka", { length: 255 }).notNull(),
+  lozinka: varchar("lozinka", { length: 255 }).notNull()
 });
 
 

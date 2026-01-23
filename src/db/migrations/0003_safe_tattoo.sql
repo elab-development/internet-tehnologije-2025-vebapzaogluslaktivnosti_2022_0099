@@ -1,0 +1,1 @@
+ALTER TABLE "korisnici" DROP COLUMN "telefon";

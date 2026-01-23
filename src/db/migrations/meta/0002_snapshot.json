@@ -1,0 +1,486 @@
+{
+  "id": "88bc4ccd-409f-4cad-adac-bb1034712077",
+  "prevId": "cd1ceff7-e13a-4941-a975-3710f79bbbe2",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.korisnici": {
+      "name": "korisnici",
+      "schema": "",
+      "columns": {
+        "idkorisnik": {
+          "name": "idkorisnik",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ime": {
+          "name": "ime",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prezime": {
+          "name": "prezime",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lozinka": {
+          "name": "lozinka",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefon": {
+          "name": "telefon",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "korisnici_email_unique": {
+          "name": "korisnici_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.preduzeca": {
+      "name": "preduzeca",
+      "schema": "",
+      "columns": {
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lozinka": {
+          "name": "lozinka",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "naziv": {
+          "name": "naziv",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "brojusluga": {
+          "name": "brojusluga",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 0
+        },
+        "verifikovan": {
+          "name": "verifikovan",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": false
+        },
+        "tip": {
+          "name": "tip",
+          "type": "tip",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "preduzeca_email_unique": {
+          "name": "preduzeca_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.radnici": {
+      "name": "radnici",
+      "schema": "",
+      "columns": {
+        "idradnik": {
+          "name": "idradnik",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ime": {
+          "name": "ime",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "prezime": {
+          "name": "prezime",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "radnici_idpreduzece_preduzeca_idpreduzece_fk": {
+          "name": "radnici_idpreduzece_preduzeca_idpreduzece_fk",
+          "tableFrom": "radnici",
+          "tableTo": "preduzeca",
+          "columnsFrom": [
+            "idpreduzece"
+          ],
+          "columnsTo": [
+            "idpreduzece"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.recenzije": {
+      "name": "recenzije",
+      "schema": "",
+      "columns": {
+        "idrecenzija": {
+          "name": "idrecenzija",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "ocena": {
+          "name": "ocena",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "komentar": {
+          "name": "komentar",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idkorisnik": {
+          "name": "idkorisnik",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "recenzije_idkorisnik_korisnici_idkorisnik_fk": {
+          "name": "recenzije_idkorisnik_korisnici_idkorisnik_fk",
+          "tableFrom": "recenzije",
+          "tableTo": "korisnici",
+          "columnsFrom": [
+            "idkorisnik"
+          ],
+          "columnsTo": [
+            "idkorisnik"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "recenzije_idpreduzece_preduzeca_idpreduzece_fk": {
+          "name": "recenzije_idpreduzece_preduzeca_idpreduzece_fk",
+          "tableFrom": "recenzije",
+          "tableTo": "preduzeca",
+          "columnsFrom": [
+            "idpreduzece"
+          ],
+          "columnsTo": [
+            "idpreduzece"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.rezervacije": {
+      "name": "rezervacije",
+      "schema": "",
+      "columns": {
+        "idrezervacija": {
+          "name": "idrezervacija",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "napomena": {
+          "name": "napomena",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "status_rezervacije",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idkorisnik": {
+          "name": "idkorisnik",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idtermin": {
+          "name": "idtermin",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "rezervacije_idkorisnik_korisnici_idkorisnik_fk": {
+          "name": "rezervacije_idkorisnik_korisnici_idkorisnik_fk",
+          "tableFrom": "rezervacije",
+          "tableTo": "korisnici",
+          "columnsFrom": [
+            "idkorisnik"
+          ],
+          "columnsTo": [
+            "idkorisnik"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "rezervacije_idtermin_termini_idtermin_fk": {
+          "name": "rezervacije_idtermin_termini_idtermin_fk",
+          "tableFrom": "rezervacije",
+          "tableTo": "termini",
+          "columnsFrom": [
+            "idtermin"
+          ],
+          "columnsTo": [
+            "idtermin"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "rezervacije_idtermin_unique": {
+          "name": "rezervacije_idtermin_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idtermin"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.termini": {
+      "name": "termini",
+      "schema": "",
+      "columns": {
+        "idtermin": {
+          "name": "idtermin",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "datumvreme": {
+          "name": "datumvreme",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idusluga": {
+          "name": "idusluga",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "idradnik": {
+          "name": "idradnik",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "termini_idusluga_usluge_idusluga_fk": {
+          "name": "termini_idusluga_usluge_idusluga_fk",
+          "tableFrom": "termini",
+          "tableTo": "usluge",
+          "columnsFrom": [
+            "idusluga"
+          ],
+          "columnsTo": [
+            "idusluga"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "termini_idradnik_radnici_idradnik_fk": {
+          "name": "termini_idradnik_radnici_idradnik_fk",
+          "tableFrom": "termini",
+          "tableTo": "radnici",
+          "columnsFrom": [
+            "idradnik"
+          ],
+          "columnsTo": [
+            "idradnik"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usluge": {
+      "name": "usluge",
+      "schema": "",
+      "columns": {
+        "idusluga": {
+          "name": "idusluga",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "naziv": {
+          "name": "naziv",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opis": {
+          "name": "opis",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cena": {
+          "name": "cena",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slikaurl": {
+          "name": "slikaurl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "idpreduzece": {
+          "name": "idpreduzece",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "usluge_idpreduzece_preduzeca_idpreduzece_fk": {
+          "name": "usluge_idpreduzece_preduzeca_idpreduzece_fk",
+          "tableFrom": "usluge",
+          "tableTo": "preduzeca",
+          "columnsFrom": [
+            "idpreduzece"
+          ],
+          "columnsTo": [
+            "idpreduzece"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.status_rezervacije": {
+      "name": "status_rezervacije",
+      "schema": "public",
+      "values": [
+        "CREATED",
+        "COMPLETED"
+      ]
+    },
+    "public.tip": {
+      "name": "tip",
+      "schema": "public",
+      "values": [
+        "SAMOSTALAC",
+        "USLUZNO_PREDUZECE"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
