@@ -1,22 +1,27 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/AuthProvider"; // Korišćenje auth kuke 
+import { useAuth } from "@/components/AuthProvider"; // Korišćenje kuke za autentifikaciju
+import Navbar from "@/components/Navbar";
 
 export default function CreateTerminPage() {
-  const { user } = useAuth();
-  const [radnici, setRadnici] = useState<any[]>([]);
+  const { user } = useAuth(); // Pristup podacima o ulogovanom preduzeću
+  const [podaci, setPodaci] = useState<{ radnici: any[], usluge: any[] }>({ radnici: [], usluge: [] });
   const [selectedRadnik, setSelectedRadnik] = useState("");
+  const [selectedUsluga, setSelectedUsluga] = useState("");
   const [datum, setDatum] = useState("");
   const [poruka, setPoruka] = useState("");
 
   useEffect(() => {
+    // Pozivamo API samo ako imamo ID ulogovanog preduzeća
     if (user?.id) {
-      // API ruta koju smo upravo napravili
       fetch(`/api/termini?idPreduzeca=${user.id}`)
-        .then(res => res.json())
-        .then(data => setRadnici(data));
+        .then((res) => res.json())
+        .then((data) => {
+          setPodaci(data);
+        })
+        .catch((err) => console.error("Greška pri učitavanju:", err));
     }
-  }, [user]);
+  }, [user]); // Re-render se vrši kada se promeni status ulogovanog korisnika 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,16 +31,18 @@ export default function CreateTerminPage() {
       body: JSON.stringify({
         datumvreme: datum,
         idradnik: selectedRadnik,
-        idpreduzece: user?.id
+        idusluga: selectedUsluga
       }),
     });
     const data = await res.json();
-    setPoruka(data.message); // Prikazuje "Uspesno kreiranje." prema Use Case 4 
+    setPoruka(data.message); // Prikaz poruke prema Use Case 4 specifikaciji 
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow border border-gray-200">
-      <h1 className="text-xl font-bold mb-4">Kreiranje termina (Use Case 4)</h1>
+    <main>
+    <Navbar />
+    <div className="mx-auto max-w-md mt-10 p-6 bg-white rounded shadow border border-gray-200">
+      <h1 className="text-xl font-bold mb-4">Kreiranje termina</h1>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="text-sm font-medium">Datum i vreme:</label>
         <input 
@@ -44,22 +51,39 @@ export default function CreateTerminPage() {
           onChange={(e) => setDatum(e.target.value)} 
           required 
         />
-        <label className="text-sm font-medium">Izaberite radnika:</label>
+
+        <label className="text-sm font-medium">Usluga:</label>
         <select 
           className="border p-2 rounded" 
+          value={selectedUsluga}
+          onChange={(e) => setSelectedUsluga(e.target.value)} 
+          required
+        >
+          <option value="">-- Odaberite uslugu --</option>
+          {podaci.usluge.map((u) => (
+            <option key={u.idusluga} value={u.idusluga}>{u.naziv}</option>
+          ))}
+        </select>
+
+        <label className="text-sm font-medium">Radnik:</label>
+        <select 
+          className="border p-2 rounded" 
+          value={selectedRadnik}
           onChange={(e) => setSelectedRadnik(e.target.value)} 
           required
         >
-          <option value="">-- Izaberi --</option>
-          {radnici.map((r) => (
+          <option value="">-- Odaberite radnika --</option>
+          {podaci.radnici.map((r) => (
             <option key={r.idradnik} value={r.idradnik}>{r.ime} {r.prezime}</option>
           ))}
         </select>
-        <button type="submit" className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
-          Potvrdi kreiranje
+
+        <button type="submit" className="bg-indigo-600 text-white p-2 rounded hover:bg-indigo-700">
+          Sačuvaj termin
         </button>
       </form>
-      {poruka && <p className={`mt-4 text-center font-bold ${poruka.includes('Uspesno') ? 'text-green-600' : 'text-red-600'}`}>{poruka}</p>}
+      {poruka && <p className="mt-4 text-center font-bold text-blue-600">{poruka}</p>}
     </div>
+    </main>
   );
 }

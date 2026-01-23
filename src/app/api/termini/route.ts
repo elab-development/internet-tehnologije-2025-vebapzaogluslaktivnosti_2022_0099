@@ -1,43 +1,51 @@
+import { db } from "@/db";
+import { radniciTable, terminiTable, uslugeTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
-
-const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const idPreduzeca = searchParams.get("idPreduzeca");
 
-    if (!idPreduzeca) return NextResponse.json([], { status: 400 });
+    if (!idPreduzeca) {
+      return NextResponse.json({ error: "ID preduzeća nije prosleđen." }, { status: 400 });
+    }
 
-    // Dohvatanje radnika za Use Case 4 
-    const radnici = await prisma.radnik.findMany({
-      where: { idpreduzece: parseInt(idPreduzeca) }
-    });
+    // Filtriranje podataka tako da se dobiju samo oni koji pripadaju ulogovanom preduzeću
+    const mojiRadnici = await db
+      .select()
+      .from(radniciTable)
+      .where(eq(radniciTable.idpreduzece, Number(idPreduzeca)));
 
-    return NextResponse.json(radnici);
+    const mojeUsluge = await db
+      .select()
+      .from(uslugeTable)
+      .where(eq(uslugeTable.idpreduzece, Number(idPreduzeca)));
+
+    return NextResponse.json({ radnici: mojiRadnici, usluge: mojeUsluge });
   } catch (error) {
-    return NextResponse.json({ error: "Greška na serveru" }, { status: 500 });
+    return NextResponse.json({ error: "Greška na serveru." }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { datumvreme, idradnik, idpreduzece } = body;
+    const { datumvreme, idradnik, idusluga } = body;
 
-    // Čuvanje termina prema Use Case 4 glavnom toku 
-    const noviTermin = await prisma.termin.create({
-      data: {
-        datumvreme: new Date(datumvreme),
-        idradnik: parseInt(idradnik),
-        idpreduzece: parseInt(idpreduzece)
-      }
-    });
+    if (!datumvreme || !idradnik || !idusluga) {
+      return NextResponse.json({ message: "Sva polja su obavezna." }, { status: 400 });
+    }
+
+    const [noviTermin] = await db.insert(terminiTable).values({
+      datumvreme: new Date(datumvreme),
+      idradnik: Number(idradnik),
+      idusluga: Number(idusluga),
+    }).returning();
 
     return NextResponse.json({ message: "Uspesno kreiranje.", termin: noviTermin }, { status: 201 });
-  } catch (error) {
+  } catch (err) {
     return NextResponse.json({ message: "Neuspesno kreiranje." }, { status: 500 });
   }
 }
-
