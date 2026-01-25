@@ -38,6 +38,9 @@ export default function CreateTerminPage() {
     setPoruka(data.message); // Prikaz poruke prema Use Case 4 specifikaciji 
   };
 
+  if (!user || user.uloga === 'KORISNIK') {
+    return <div className="p-10 text-center">Nemate dozvolu za pristup ovoj stranici.</div>;
+  }
   return (
     <main>
     <Navbar />

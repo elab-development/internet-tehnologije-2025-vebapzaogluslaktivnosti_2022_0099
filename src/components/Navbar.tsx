@@ -2,9 +2,16 @@
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import NavCard from "./NavCard"; // Uvoz reusable komponente
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
     const { user, logout } = useAuth();
+    const router = useRouter(); // Inicijalizacija rutera
+
+    const handleLogout = async () => {
+        await logout();
+        router.push("/login"); // Preusmeravanje na login nakon odjave
+    };
 
     return (
         <nav className="flex justify-between items-center p-4 bg-white shadow-md mb-6 sticky top-0 z-50">
@@ -39,7 +46,7 @@ export default function Navbar() {
                             {user.email} ({user.uloga})
                         </span>
                         <button 
-                            onClick={logout} 
+                            onClick={handleLogout} 
                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm transition shadow-sm"
                         >
                             Odjavi se

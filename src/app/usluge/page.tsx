@@ -3,12 +3,16 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import SearchFilters from "@/components/SearchFilters";
 import Image from "next/image";
+import { useAuth } from "@/components/AuthProvider";
+import Link from "next/link";
 
 export default function ServicesPage() {
   const [sveUsluge, setSveUsluge] = useState<any[]>([]);
   const [filtriraneUsluge, setFiltriraneUsluge] = useState<any[]>([]);
   const [poruka, setPoruka] = useState("");
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,6 +46,9 @@ export default function ServicesPage() {
     );
   };
 
+  if (!user || user.uloga === 'SAMOSTALAC' || user.uloga === 'USLUZNO_PREDUZECE') {
+    return <div className="p-10 text-center">Nemate dozvolu za pristup ovoj stranici.</div>;
+  }
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
@@ -53,11 +60,10 @@ export default function ServicesPage() {
 
         {poruka && (
           <div
-            className={`mb-6 p-3 rounded-lg border ${
-              filtriraneUsluge.length > 0
+            className={`mb-6 p-3 rounded-lg border ${filtriraneUsluge.length > 0
                 ? "bg-green-50 border-green-200 text-green-700"
                 : "bg-red-50 border-red-200 text-red-700"
-            }`}
+              }`}
           >
             {poruka}
           </div>
@@ -92,9 +98,12 @@ export default function ServicesPage() {
                     <span className="text-2xl font-bold text-gray-900">
                       {u.cena} €
                     </span>
-                    <button className="text-white bg-indigo-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition">
-                      Detalji
-                    </button>
+                    <Link
+                      href={`/usluge/${u.idusluga}`}
+                      className="text-white bg-indigo-600 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition inline-block text-center"
+                    >
+                      Rezerviši
+                    </Link>
                   </div>
                 </div>
               </div>
