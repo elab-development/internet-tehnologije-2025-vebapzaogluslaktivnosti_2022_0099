@@ -19,8 +19,15 @@ export default function ServicesPage() {
       try {
         const res = await fetch("/api/usluge");
         const data = await res.json();
-        setSveUsluge(data);
-        setFiltriraneUsluge(data);
+        if (res.ok && Array.isArray(data)) {
+          setSveUsluge(data);
+          setFiltriraneUsluge(data);
+        } else {
+          console.error("Greška sa servera:", data.error);
+          setFiltriraneUsluge([]);
+          setSveUsluge([]);
+        }
+
       } catch (err) {
         console.error("Greška pri dohvatanju podataka:", err);
       } finally {
@@ -61,8 +68,8 @@ export default function ServicesPage() {
         {poruka && (
           <div
             className={`mb-6 p-3 rounded-lg border ${filtriraneUsluge.length > 0
-                ? "bg-green-50 border-green-200 text-green-700"
-                : "bg-red-50 border-red-200 text-red-700"
+              ? "bg-green-50 border-green-200 text-green-700"
+              : "bg-red-50 border-red-200 text-red-700"
               }`}
           >
             {poruka}
@@ -88,9 +95,19 @@ export default function ServicesPage() {
                 </div>
                 <div className="p-5">
                   <h3 className="text-xl font-bold text-gray-800">{u.naziv}</h3>
-                  <p className="text-indigo-600 text-sm font-medium">
-                    Pruža: {u.preduzece_naziv}
-                  </p>
+                  <div className="p-4 border rounded-lg">
+                    <h3 className="font-bold">{u.preduzece_naziv}</h3>
+                    <p className="text-sm text-gray-500">
+                      Pruža:
+                      <Link
+                        href={`/preduzece/${u.idpreduzece}`}
+                        className="text-indigo-600 hover:underline ml-1 font-medium"
+                      >
+                        {u.preduzece_naziv}
+                      </Link>
+                    </p>
+                    {/* Dugme Rezervisi... */}
+                  </div>
                   <p className="text-gray-600 mt-2 text-sm line-clamp-2">
                     {u.opis}
                   </p>

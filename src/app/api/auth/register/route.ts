@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
-import { korisniciTable, preduzecaTable, tipEnum } from '@/db/schema';
+import { korisniciTable, preduzecaTable } from '@/db/schema';
 import bcrypt from 'bcryptjs';
-import { type InferModel } from 'drizzle-orm';
+import { signAuthToken, AUTH_COOKIE, cookieOpts } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
@@ -11,93 +11,80 @@ export async function POST(req: Request) {
 
     if (!email || !lozinka || !uloga) {
       return NextResponse.json(
-        { message: "Nedostaju obavezna polja." },
+        { error: "Email, lozinka i uloga su obavezni." },
         { status: 400 }
       );
     }
 
     const hashedLozinka = await bcrypt.hash(lozinka, 10);
 
+    let realId: string | number;
+    let displayName: string;
+
     if (uloga === 'KORISNIK') {
       if (!ime || !prezime) {
-        return NextResponse.json(
-          { message: "Ime i prezime su obavezni za korisnika." },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Ime i prezime su obavezni." }, { status: 400 });
       }
 
-      type KorisnikInsert = InferModel<typeof korisniciTable, "insert">;
-      type KorisnikSelect = InferModel<typeof korisniciTable, "select">;
-
-      const [noviKorisnik]: KorisnikSelect[] = await db
+      const [noviKorisnik] = await db
         .insert(korisniciTable)
         .values({
           email,
           lozinka: hashedLozinka,
           ime,
           prezime,
-        } as KorisnikInsert)
+        })
         .returning();
 
-      return NextResponse.json(
-        {
-          message: "Uspešna registracija korisnika.",
-          user: {
-            id: noviKorisnik.idkorisnik,
-            email: noviKorisnik.email,
-            uloga: 'KORISNIK',
-          },
-        },
-        { status: 201 }
-      );
-    }
-
-    if (uloga === 'SAMOSTALAC' || uloga === 'USLUZNO_PREDUZECE') {
+      realId = noviKorisnik.idkorisnik;
+      displayName = `${noviKorisnik.ime} ${noviKorisnik.prezime}`;
+    } 
+    else if (uloga === 'SAMOSTALAC' || uloga === 'USLUZNO_PREDUZECE') {
       if (!naziv) {
-        return NextResponse.json(
-          { message: "Naziv je obavezan za preduzeće." },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: "Naziv je obavezan." }, { status: 400 });
       }
 
-      type PreduzeceInsert = InferModel<typeof preduzecaTable, "insert">;
-      type PreduzeceSelect = InferModel<typeof preduzecaTable, "select">;
-
-      const [novoPreduzece]: PreduzeceSelect[] = await db
+      const [novoPreduzece] = await db
         .insert(preduzecaTable)
         .values({
           email,
           lozinka: hashedLozinka,
           naziv,
-          tip: uloga as typeof tipEnum.enumName,
+          tip: uloga,  
           verifikovan: false,
-        } as PreduzeceInsert)
+        })
         .returning();
 
-      return NextResponse.json(
-        {
-          message: "Uspešna registracija preduzeća.",
-          user: {
-            id: novoPreduzece.idpreduzece,
-            email: novoPreduzece.email,
-            uloga: uloga,
-          },
-        },
-        { status: 201 }
-      );
+      realId = novoPreduzece.idpreduzece;
+      displayName = novoPreduzece.naziv;
+    } 
+    else {
+      return NextResponse.json({ error: "Neispravna uloga." }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { message: "Neispravna uloga." },
-      { status: 400 }
+    const token = signAuthToken({
+      sub: String(realId), 
+      email: email,
+      role: uloga as "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE", // Middleware ovo proverava [2]
+      name: displayName
+    });
+
+    const response = NextResponse.json(
+      {
+        message: "Uspešna registracija.",
+        user: { id: realId, email, uloga }
+      },
+      { status: 201 }
     );
 
+    response.cookies.set(AUTH_COOKIE, token, cookieOpts());
+
+    return response;
+
   } catch (error: any) {
+    
     return NextResponse.json(
-      {
-        message: "Email je već zauzet ili je došlo do greške.",
-        error: error.message,
-      },
+      { error: "Email je zauzet ili je došlo do greške na serveru." },
       { status: 500 }
     );
   }

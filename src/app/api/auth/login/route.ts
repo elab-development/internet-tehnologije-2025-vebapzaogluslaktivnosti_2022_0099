@@ -3,108 +3,59 @@ import { db } from "@/db";
 import { korisniciTable, preduzecaTable } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'tvoja_tajna_sifra';
+import { signAuthToken, AUTH_COOKIE, cookieOpts } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
     const { email, lozinka } = await req.json();
 
-    //  Validacija
     if (!email || !lozinka) {
-      return NextResponse.json(
-        { message: "Email i lozinka su obavezni." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email i lozinka su obavezni." }, { status: 400 });
     }
 
-    //  Traženje korisnika u tabeli KORISNICI
-    const korisnikResult = await db
-      .select()
-      .from(korisniciTable)
-      .where(eq(korisniciTable.email, email))
-      .limit(1);
+    let authenticatedUser: any = null;
+    let uloga: "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE" = 'KORISNIK';
 
-    let authenticatedUser: any = korisnikResult[0];
-    let uloga = 'KORISNIK';
+    const [korisnik] = await db.select().from(korisniciTable).where(eq(korisniciTable.email, email)).limit(1);
 
-    //  Ako nije korisnik → tražimo u PREDUZEĆIMA
-    if (!authenticatedUser) {
-      const preduzeceResult = await db
-        .select()
-        .from(preduzecaTable)
-        .where(eq(preduzecaTable.email, email))
-        .limit(1);
-
-      authenticatedUser = preduzeceResult[0];
-
-      if (authenticatedUser) {
-        uloga = authenticatedUser.tip; // SAMOSTALAC | USLUZNO_PREDUZECE
-
-      }
-      console.log("EMAIL:", email);
-      console.log("USER FROM DB:", authenticatedUser);
-      console.log("HASH FROM DB:", authenticatedUser?.lozinka);
-    }
-
-    //  Ako ne postoji
-    if (!authenticatedUser) {
-      return NextResponse.json(
-        { message: "Pogrešan email ili lozinka." },
-        { status: 401 }
-      );
-    }
-
-
-    //  Provera lozinke
-    const isPasswordCorrect = await bcrypt.compare(
-      lozinka,
-      authenticatedUser.lozinka
-    );
-
-    if (!isPasswordCorrect) {
-      return NextResponse.json(
-        { message: "Pogrešan email ili lozinka." },
-        { status: 401 }
-      );
-    }
-
-    //  JWT
-    const token = jwt.sign(
-      {
-        userId: authenticatedUser.id,
-        email: authenticatedUser.email,
-        uloga
-      },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    let id1: number;
-    if (uloga === 'KORISNIK') {
-      id1 = authenticatedUser.idkorisnik;
+    if (korisnik) {
+      authenticatedUser = korisnik;
+      uloga = 'KORISNIK';
     } else {
-      id1 = authenticatedUser.idpreduzece;
+      const [preduzece] = await db.select().from(preduzecaTable).where(eq(preduzecaTable.email, email)).limit(1);
+      if (preduzece) {
+        authenticatedUser = preduzece;
+        uloga = preduzece.tip;
+      }
     }
-    //  Odgovor
-    return NextResponse.json(
-      {
-        message: "Uspešna prijava.",
-        token,
-        user: {
-          id: id1,
-          email: authenticatedUser.email,
-          uloga
-        }
-      },
-      { status: 200 }
-    );
+
+    if (!authenticatedUser) {
+      return NextResponse.json({ error: "Pogrešan email ili lozinka." }, { status: 401 });
+    }
+
+    const isPasswordCorrect = await bcrypt.compare(lozinka, authenticatedUser.lozinka);
+    if (!isPasswordCorrect) {
+      return NextResponse.json({ error: "Pogrešan email ili lozinka." }, { status: 401 });
+    }
+
+    const realId = uloga === 'KORISNIK' ? authenticatedUser.idkorisnik : authenticatedUser.idpreduzece;
+
+    const token = signAuthToken({
+      sub: String(realId),
+      email: authenticatedUser.email,
+      role: uloga,
+      name: uloga === 'KORISNIK' ? `${authenticatedUser.ime} ${authenticatedUser.prezime}` : authenticatedUser.naziv
+    });
+
+    const response = NextResponse.json({
+      message: "Uspešna prijava.",
+      user: { id: realId, email: authenticatedUser.email, uloga }
+    });
+
+    response.cookies.set(AUTH_COOKIE, token, cookieOpts());
+    return response;
 
   } catch (error: any) {
-    return NextResponse.json(
-      { message: "Greška na serveru.", error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Greška na serveru.", details: error.message }, { status: 500 });
   }
 }

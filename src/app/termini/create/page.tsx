@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuth } from "@/components/AuthProvider"; // Korišćenje kuke za autentifikaciju
+import { useAuth } from "@/components/AuthProvider"; 
 import Navbar from "@/components/Navbar";
 
 export default function CreateTerminPage() {
@@ -12,7 +12,6 @@ export default function CreateTerminPage() {
   const [poruka, setPoruka] = useState("");
 
   useEffect(() => {
-    // Pozivamo API samo ako imamo ID ulogovanog preduzeća
     if (user?.id) {
       fetch(`/api/termini?idPreduzeca=${user.id}`)
         .then((res) => res.json())
@@ -34,8 +33,15 @@ export default function CreateTerminPage() {
         idusluga: selectedUsluga
       }),
     });
+    setSelectedRadnik("");
+    setSelectedUsluga("");
     const data = await res.json();
-    setPoruka(data.message); // Prikaz poruke prema Use Case 4 specifikaciji 
+    if (res.ok) {
+      alert("Uspesno kreiranje.");
+    } else {
+      alert("Neuspesno kreiranje.");
+    }
+    //setPoruka(data.message); 
   };
 
   if (!user || user.uloga === 'KORISNIK') {
