@@ -1,21 +1,38 @@
 import { db } from "@/db";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers"; // Dodajemo za pristup kuki-jima
+import { verifyAuthToken, AUTH_COOKIE } from "@/lib/auth"; // Importujemo tvoju auth logiku
 import {
     preduzecaTable,
     rezervacijeTable,
     recenzijeTable,
     terminiTable,
-    uslugeTable,
-    korisniciTable
+    uslugeTable
 } from "@/db/schema";
 import { sql, and, eq } from "drizzle-orm";
 
 export async function POST(req: Request) {
-
     try {
-        const body = await req.json();
-        const { ocena, komentar, idkorisnik, idpreduzece } = body;
+        // 1. PROVERA AUTENTIFIKACIJE 
+        const cookieStore = await cookies();
+        const token = cookieStore.get(AUTH_COOKIE)?.value;
 
+        if (!token) {
+            return NextResponse.json({ message: "Niste ulogovani." }, { status: 401 });
+        }
+
+        let user;
+        try {
+            user = verifyAuthToken(token); // Verifikacija JWT tokena 
+        } catch (e) {
+            return NextResponse.json({ message: "Nevalidna sesija." }, { status: 401 });
+        }
+
+        const idkorisnik = user.sub; 
+        const body = await req.json();
+        const { ocena, komentar, idpreduzece } = body; 
+
+        // 2. PROVERA USLOVA ZA OCENJIVANJE 
         const provera = await db
             .select()
             .from(rezervacijeTable)
@@ -28,13 +45,14 @@ export async function POST(req: Request) {
             ));
 
         if (provera.length === 0) {
-            return NextResponse.json({ message: "Morate imati završenu uslugu kod ovog pružaoca da biste ga ocenili." }, { status: 403 });
-        }
-        // Validacija ocene 1-5
-        if (!ocena || ocena < 1 || ocena > 5 || !idpreduzece) {
-            return NextResponse.json({ message: "Neuspesno ocenjivanje. Nevalidni podaci." }, { status: 400 });
+            return NextResponse.json({ message: "Morate imati završenu uslugu da biste ocenili pružaoca." }, { status: 403 });
         }
 
+        if (!ocena || ocena < 1 || ocena > 5 || !idpreduzece) {
+            return NextResponse.json({ message: "Nevalidni podaci." }, { status: 400 });
+        }
+
+        // 3. UNOS RECENZIJE
         const [novaRecenzija] = await db.insert(recenzijeTable).values({
             ocena,
             komentar,
@@ -42,7 +60,7 @@ export async function POST(req: Request) {
             idpreduzece,
         }).returning();
 
-        // 1. Izračunaj broj završenih usluga
+        // 4. AUTOMATSKO AŽURIRANJE VERIFIKACIJE (Bedž) 
         const [statistikaUsluga] = await db
             .select({ count: sql<number>`count(*)` })
             .from(rezervacijeTable)
@@ -53,27 +71,22 @@ export async function POST(req: Request) {
                 eq(rezervacijeTable.status, "COMPLETED")
             ));
 
-        // 2. Izračunaj novu prosečnu ocenu
         const [statistikaOcena] = await db
             .select({ prosek: sql<number>`avg(${recenzijeTable.ocena})` })
             .from(recenzijeTable)
             .where(eq(recenzijeTable.idpreduzece, idpreduzece));
 
-        // 3. Provera uslova za bedž (10 usluga i prosek >= 4.5)
         const brojUsluga = Number(statistikaUsluga?.count || 0);
         const prosek = Number(statistikaOcena?.prosek || 0);
-        const verifikovanStatus = brojUsluga >= 2 && prosek >= 4.5; //10
+        const verifikovanStatus = brojUsluga >= 10 && prosek >= 4.5; 
 
-        // 4. Trajno ažuriranje u bazi podataka
         await db
             .update(preduzecaTable)
             .set({ verifikovan: verifikovanStatus })
             .where(eq(preduzecaTable.idpreduzece, idpreduzece));
-        return NextResponse.json({
-            message: "Uspesno ocenjivanje.",
-            recenzija: novaRecenzija
-        }, { status: 201 });
+
+        return NextResponse.json({ message: "Uspesno ocenjivanje.", recenzija: novaRecenzija }, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ message: "Neuspesno ocenjivanje." }, { status: 500 });
+        return NextResponse.json({ message: "Greška na serveru." }, { status: 500 });
     }
 }

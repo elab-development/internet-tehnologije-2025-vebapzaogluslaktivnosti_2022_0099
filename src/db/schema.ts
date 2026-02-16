@@ -62,7 +62,7 @@ export const uslugeTable = pgTable("usluge", {
 // 5. Termini 
 export const terminiTable = pgTable("termini", {
   idtermin: uuid("idtermin").primaryKey().defaultRandom(),
-  datumvreme: timestamp("datumvreme").notNull(),
+  datumvreme: timestamp("datumvreme", { mode: "date" }).notNull(), 
   idusluga: uuid("idusluga")
     .notNull()
     .references(() => uslugeTable.idusluga),

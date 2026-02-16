@@ -14,8 +14,10 @@ import bcrypt from "bcrypt";
 async function main() {
   console.log("Seedovanje baze je počelo...");
 
+  // Heširanje lozinke 
   const hash = await bcrypt.hash("lozinka123", 10);
 
+  // tvoji definisani ID-jevi (UUID format) 
   const user1Id = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
   const user2Id = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a12";
   const preduzeceId = "b0eebc99-9c0b-4ef8-bb6d-6bb9bd380a21";
@@ -25,11 +27,25 @@ async function main() {
   const termin1Id = "e0eebc99-9c0b-4ef8-bb6d-6bb9bd380a51";
 
   await db.transaction(async (tx) => {
+    // 1. BRISANJE - Redosled je ključan zbog stranih ključeva 
+    console.log("Čišćenje starih podataka...");
+    await tx.delete(recenzijeTable);
+    await tx.delete(rezervacijeTable);
+    await tx.delete(terminiTable);
+    await tx.delete(uslugeTable);
+    await tx.delete(radniciTable);
+    await tx.delete(preduzecaTable);
+    await tx.delete(korisniciTable);
+
+    console.log("Ubacivanje novih podataka...");
+
+    // 2. KORISNICI 
     await tx.insert(korisniciTable).values([
       { idkorisnik: user1Id, ime: "Marko", prezime: "Marković", email: "marko@gmail.com", lozinka: hash },
       { idkorisnik: user2Id, ime: "Jovana", prezime: "Jović", email: "jovana@gmail.com", lozinka: hash },
     ]);
 
+    // 3. PREDUZEĆA I SAMOSTALCI 
     await tx.insert(preduzecaTable).values([
       { 
         idpreduzece: preduzeceId, 
@@ -51,10 +67,12 @@ async function main() {
       },
     ]);
 
+    // 4. RADNICI 
     await tx.insert(radniciTable).values([
       { idradnik: radnik1Id, idpreduzece: preduzeceId, ime: "Dragan", prezime: "Nikolić" },
     ]);
 
+    // 5. USLUGE 
     await tx.insert(uslugeTable).values([
       { 
         idusluga: usluga1Id, 
@@ -66,6 +84,7 @@ async function main() {
       },
     ]);
 
+    // 6. TERMINI 
     await tx.insert(terminiTable).values([
       { 
         idtermin: termin1Id, 
@@ -75,6 +94,7 @@ async function main() {
       },
     ]);
 
+    // 7. REZERVACIJE 
     await tx.insert(rezervacijeTable).values([
       { 
         idrezervacija: "f0eebc99-9c0b-4ef8-bb6d-6bb9bd380a61", 
@@ -85,6 +105,7 @@ async function main() {
       },
     ]);
 
+    // 8. RECENZIJE 
     await tx.insert(recenzijeTable).values([
       { 
         idrecenzija: "00eebc99-9c0b-4ef8-bb6d-6bb9bd380a71", 
