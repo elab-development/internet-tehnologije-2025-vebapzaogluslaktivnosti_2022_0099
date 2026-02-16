@@ -1,0 +1,31 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout koda
+        uses: actions/checkout@v4
+
+      - name: Postavljanje Node.js okruženja
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Instalacija zavisnosti
+        run: npm install
+
+      - name: Build aplikacije
+        run: npm run build
+        env:
+          # Dodajemo dummy vrednosti jer Next.js build može tražiti env varijable
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/db"
+          JWT_SECRET: "dummy_secret_for_ci"
