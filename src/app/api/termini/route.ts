@@ -16,12 +16,12 @@ export async function GET(req: Request) {
     const mojiRadnici = await db
       .select()
       .from(radniciTable)
-      .where(eq(radniciTable.idpreduzece, Number(idPreduzeca)));
+      .where(eq(radniciTable.idpreduzece, idPreduzeca));
 
     const mojeUsluge = await db
       .select()
       .from(uslugeTable)
-      .where(eq(uslugeTable.idpreduzece, Number(idPreduzeca)));
+      .where(eq(uslugeTable.idpreduzece, idPreduzeca));
 
     return NextResponse.json({ radnici: mojiRadnici, usluge: mojeUsluge });
   } catch (error) {
@@ -40,8 +40,8 @@ export async function POST(req: Request) {
 
     const [noviTermin] = await db.insert(terminiTable).values({
       datumvreme: new Date(datumvreme),
-      idradnik: Number(idradnik),
-      idusluga: Number(idusluga),
+      idradnik: idradnik,
+      idusluga: idusluga,
     }).returning();
 
     return NextResponse.json({ message: "Uspesno kreiranje.", termin: noviTermin }, { status: 201 });

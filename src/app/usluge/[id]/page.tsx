@@ -61,7 +61,8 @@ export default function DetaljiUslugePage() {
     if (res.ok) {
       alert("Uspesno zakazivanje.");
     } else {
-      alert("Neuspesno zakazivanje.");
+      //alert("Neuspesno zakazivanje.");
+      alert(data.message);
     }
   };
 

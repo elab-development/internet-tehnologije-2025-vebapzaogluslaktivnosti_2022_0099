@@ -39,6 +39,7 @@ export default function ProfilPreduzecaPage() {
         ? recenzije.reduce((acc, r) => acc + r.ocena, 0) / recenzije.length
         : 0;
     const isVerifikovan = prethodneUsluge.length >= 2 && prosek >= 4.5; //10
+    
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!user) return;
@@ -50,7 +51,7 @@ export default function ProfilPreduzecaPage() {
                 ocena,
                 komentar,
                 idkorisnik: user.id,
-                idpreduzece: Number(params.id)
+                idpreduzece: params.id
             }),
         });
 
@@ -58,10 +59,11 @@ export default function ProfilPreduzecaPage() {
         const data = await res.json();
         //setPoruka(data.message);
         if (res.ok) {
-      alert("Uspesno ocenjivanje.");
-    } else {
-      alert("Neuspesno ocenjivanje.");
-    }
+            alert("Uspesno ocenjivanje.");
+        } else {
+            alert("Neuspesno ocenjivanje.");
+            //alert(data.message);
+        }
     };
 
     return (

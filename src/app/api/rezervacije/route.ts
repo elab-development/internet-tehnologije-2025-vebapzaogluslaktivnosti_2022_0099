@@ -12,8 +12,8 @@ export async function POST(req: Request) {
     }
 
     const [novaRezervacija] = await db.insert(rezervacijeTable).values({
-      idtermin: Number(idtermin),
-      idkorisnik: Number(idkorisnik),
+      idtermin: idtermin,
+      idkorisnik: idkorisnik,
       napomena: napomena || "",
       status: "CREATED"
     }).returning();

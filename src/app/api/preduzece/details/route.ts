@@ -23,7 +23,7 @@ export async function GET(req: Request) {
     const [preduzece] = await db
       .select()
       .from(preduzecaTable)
-      .where(eq(preduzecaTable.idpreduzece, Number(idPreduzece)));
+      .where(eq(preduzecaTable.idpreduzece, idPreduzece));
 
     if (!preduzece) {
       return NextResponse.json({ error: "Preduzeće nije pronađeno" }, { status: 404 });
@@ -41,7 +41,7 @@ export async function GET(req: Request) {
       .innerJoin(uslugeTable, eq(terminiTable.idusluga, uslugeTable.idusluga))
       .where(
         and(
-          eq(uslugeTable.idpreduzece, Number(idPreduzece)),
+          eq(uslugeTable.idpreduzece, idPreduzece),
           eq(rezervacijeTable.status, "COMPLETED")
         )
       );
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
       })
       .from(recenzijeTable)
       .innerJoin(korisniciTable, eq(recenzijeTable.idkorisnik, korisniciTable.idkorisnik))
-      .where(eq(recenzijeTable.idpreduzece, Number(idPreduzece)));
+      .where(eq(recenzijeTable.idpreduzece, idPreduzece));
 
     let mozeDaOceni = false;
     if (idKorisnik) {
@@ -66,8 +66,8 @@ export async function GET(req: Request) {
         .innerJoin(uslugeTable, eq(terminiTable.idusluga, uslugeTable.idusluga))
         .where(
           and(
-            eq(rezervacijeTable.idkorisnik, Number(idKorisnik)),
-            eq(uslugeTable.idpreduzece, Number(idPreduzece)),
+            eq(rezervacijeTable.idkorisnik, idKorisnik),
+            eq(uslugeTable.idpreduzece, idPreduzece),
             eq(rezervacijeTable.status, "COMPLETED")
           )
         );

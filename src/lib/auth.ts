@@ -8,10 +8,10 @@ if (!JWT_SECRET) {
 }
 
 export type JwtUserClaims = {
-  sub: string;   // ID korisnika (idkorisnik ili idpreduzece) [14, 15]
-  email: string; // [13]
-  name?: string; // [13]
-  role: "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE"; // [7]
+  sub: string;   
+  email: string; 
+  name?: string; 
+  role: "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE"; 
 };
 
 export function signAuthToken(claims: JwtUserClaims) {
@@ -21,7 +21,6 @@ export function signAuthToken(claims: JwtUserClaims) {
 export function verifyAuthToken(token: string): JwtUserClaims {
   const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & JwtUserClaims;
   
-  // Provera obaveznih claim-ova prema izvorima [4]
   if (!payload || !payload.sub || !payload.email || !payload.role) {
     throw new Error("Invalid token claims");
   }
@@ -36,10 +35,10 @@ export function verifyAuthToken(token: string): JwtUserClaims {
 
 export function cookieOpts() {
   return {
-    httpOnly: true, // Zastita od XSS [16]
-    sameSite: "lax" as const, // Zastita od CSRF [16]
+    httpOnly: true, 
+    sameSite: "lax" as const, 
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7 // 7 dana [17]
+    maxAge: 60 * 60 * 24 * 7 
   };
 }

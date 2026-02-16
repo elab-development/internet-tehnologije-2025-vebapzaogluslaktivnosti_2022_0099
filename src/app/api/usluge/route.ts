@@ -17,19 +17,19 @@ export async function POST(req: Request) {
       );
     }
 
-    type UslugaInsert = InferModel<typeof uslugeTable, "insert">;
-    type UslugaSelect = InferModel<typeof uslugeTable, "select">;
+      type UslugaInsert = InferModel<typeof uslugeTable, "insert">;
+      type UslugaSelect = InferModel<typeof uslugeTable, "select">;
 
-    const [novaUsluga]: UslugaSelect[] = await db
-      .insert(uslugeTable)
-      .values({
-        naziv,
-        opis: opis || "",
-        cena: parseFloat(cena),
-        slikaurl: slikaurl || null,
-        idpreduzece: Number(idpreduzece),
-      } as UslugaInsert)
-      .returning();
+      const [novaUsluga]: UslugaSelect[] = await db
+        .insert(uslugeTable)
+        .values({
+          naziv,
+          opis: opis || "",
+          cena: parseFloat(cena),
+          slikaurl: slikaurl || null,
+          idpreduzece: idpreduzece,
+        } as UslugaInsert)
+        .returning();
 
     return NextResponse.json(
       { message: "Uspešno kreirana usluga.", usluga: novaUsluga },

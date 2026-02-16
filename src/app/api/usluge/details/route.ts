@@ -10,7 +10,7 @@ export async function GET(req: Request) {
 
     if (!idUsluge) return NextResponse.json({ error: "ID nedostaje" }, { status: 400 });
 
-    const [usluga] = await db.select().from(uslugeTable).where(eq(uslugeTable.idusluga, Number(idUsluge)));
+    const [usluga] = await db.select().from(uslugeTable).where(eq(uslugeTable.idusluga, idUsluge));
 
     const dostupniTermini = await db
       .select({
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
       .leftJoin(rezervacijeTable, eq(terminiTable.idtermin, rezervacijeTable.idtermin))
       .where(
         and(
-          eq(terminiTable.idusluga, Number(idUsluge)),
+          eq(terminiTable.idusluga, idUsluge),
           isNull(rezervacijeTable.idrezervacija) 
         )
       );

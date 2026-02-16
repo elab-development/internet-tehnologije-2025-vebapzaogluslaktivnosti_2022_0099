@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     const token = signAuthToken({
       sub: String(realId), 
       email: email,
-      role: uloga as "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE", // Middleware ovo proverava [2]
+      role: uloga as "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE", // Middleware ovo proverava 
       name: displayName
     });
 
