@@ -2,10 +2,10 @@ import * as jwt from "jsonwebtoken";
 
 export const AUTH_COOKIE = "auth"; 
 
-const JWT_SECRET = process.env.JWT_SECRET || "build-time-safe-secret";
+const JWT_SECRET = process.env.JWT_SECRET || "privremeni-kljuc-samo-za-build";
 
 if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
-  console.warn("UPOZORENJE: JWT_SECRET nije pronađen u okruženju.");
+  console.warn("UPOZORENJE: JWT_SECRET nije pronađen. Koristi se fallback.");
 }
 
 export type JwtUserClaims = {
@@ -36,8 +36,8 @@ export function verifyAuthToken(token: string): JwtUserClaims {
 
 export function cookieOpts() {
   return {
-    httpOnly: true, 
-    sameSite: "lax" as const, 
+    httpOnly: true, // zaštita od XSS 
+    sameSite: "lax" as const, // zaštita od CSRF 
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 7 
