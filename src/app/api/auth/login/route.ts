@@ -5,6 +5,8 @@ import { eq } from "drizzle-orm";
 import bcrypt from 'bcryptjs';
 import { signAuthToken, AUTH_COOKIE, cookieOpts } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const { email, lozinka } = await req.json();

@@ -4,6 +4,8 @@ import { korisniciTable, preduzecaTable } from '@/db/schema';
 import bcrypt from 'bcryptjs';
 import { signAuthToken, AUTH_COOKIE, cookieOpts } from "@/lib/auth";
 
+export const dynamic = "force-dynamic"; 
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
