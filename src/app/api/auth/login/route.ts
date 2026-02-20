@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       const [preduzece] = await db.select().from(preduzecaTable).where(eq(preduzecaTable.email, email)).limit(1);
       if (preduzece) {
         authenticatedUser = preduzece;
-        uloga = preduzece.tip;
+        uloga = preduzece.tip as any; 
       }
     }
 

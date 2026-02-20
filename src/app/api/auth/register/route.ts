@@ -8,86 +8,63 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email, lozinka, ime, prezime, naziv, uloga } = body;
+    const podaci = await req.json();
+    const { email, lozinka, uloga, ime, prezime, naziv } = podaci;
 
     if (!email || !lozinka || !uloga) {
-      return NextResponse.json(
-        { error: "Email, lozinka i uloga su obavezni." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Email, lozinka i uloga su obavezni parametri." }, { status: 400 });
     }
 
-    const hashedLozinka = await bcrypt.hash(lozinka, 10);
-
-    let realId: string | number;
-    let displayName: string;
+    const hešovanaLozinka = await bcrypt.hash(lozinka, 10); 
+    let korisnikId: string | number;
+    let prikazanoIme: string;
 
     if (uloga === 'KORISNIK') {
-      if (!ime || !prezime) {
-        return NextResponse.json({ error: "Ime i prezime su obavezni." }, { status: 400 });
-      }
+      if (!ime || !prezime) return NextResponse.json({ error: "Ime i prezime su obavezni za korisnika." }, { status: 400 });
 
-      const [noviKorisnik] = await db
-        .insert(korisniciTable)
-        .values({
-          email,
-          lozinka: hashedLozinka,
-          ime,
-          prezime,
-        })
-        .returning();
+      const [novi] = await db.insert(korisniciTable).values({
+        email,
+        lozinka: hešovanaLozinka,
+        ime,
+        prezime
+      }).returning();
 
-      realId = noviKorisnik.idkorisnik;
-      displayName = `${noviKorisnik.ime} ${noviKorisnik.prezime}`;
-    } 
-    else if (uloga === 'SAMOSTALAC' || uloga === 'USLUZNO_PREDUZECE') {
-      if (!naziv) {
-        return NextResponse.json({ error: "Naziv je obavezan." }, { status: 400 });
-      }
+      korisnikId = novi.idkorisnik; 
+      prikazanoIme = `${novi.ime} ${novi.prezime}`;
+    } else if (uloga === 'SAMOSTALAC' || uloga === 'USLUZNO_PREDUZECE') {
+      if (!naziv) return NextResponse.json({ error: "Naziv je obavezan za preduzeće/samostalca." }, { status: 400 });
 
-      const [novoPreduzece] = await db
-        .insert(preduzecaTable)
-        .values({
-          email,
-          lozinka: hashedLozinka,
-          naziv,
-          tip: uloga,  
-          verifikovan: false,
-        })
-        .returning();
+      const [firma] = await db.insert(preduzecaTable).values({
+        email,
+        lozinka: hešovanaLozinka,
+        naziv,
+        tip: uloga,
+        verifikovan: false 
+      }).returning();
 
-      realId = novoPreduzece.idpreduzece;
-      displayName = novoPreduzece.naziv;
-    } 
-    else {
-      return NextResponse.json({ error: "Neispravna uloga." }, { status: 400 });
+      korisnikId = firma.idpreduzece; 
+      prikazanoIme = firma.naziv;
+    } else {
+      return NextResponse.json({ error: "Prosleđena uloga nije prepoznata u sistemu." }, { status: 400 });
     }
 
     const token = signAuthToken({
-      sub: String(realId), 
-      email: email,
-      role: uloga as "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE", // Middleware ovo proverava 
-      name: displayName
+      sub: String(korisnikId),
+      email,
+      role: uloga as "KORISNIK" | "SAMOSTALAC" | "USLUZNO_PREDUZECE",
+      name: prikazanoIme
     });
 
-    const response = NextResponse.json(
-      {
-        message: "Uspešna registracija.",
-        user: { id: realId, email, uloga }
-      },
-      { status: 201 }
-    );
+    const odgovor = NextResponse.json({
+      poruka: "Nalog je uspešno kreiran.",
+      korisnik: { id: korisnikId, email, uloga }
+    }, { status: 201 });
 
-    response.cookies.set(AUTH_COOKIE, token, cookieOpts());
+    odgovor.cookies.set(AUTH_COOKIE, token, cookieOpts());
 
-    return response;
+    return odgovor;
 
-  } catch (error: any) {
-    
-    return NextResponse.json(
-      { error: "Email je zauzet ili je došlo do greške na serveru." },
-      { status: 500 }
-    );
+  } catch (err: any) {
+    return NextResponse.json({ error: "Došlo je do greške. Moguće je da je email već u upotrebi." }, { status: 500 });
   }
 }

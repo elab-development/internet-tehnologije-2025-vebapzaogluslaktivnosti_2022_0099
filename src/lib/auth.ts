@@ -2,7 +2,7 @@ import * as jwt from "jsonwebtoken";
 
 export const AUTH_COOKIE = "auth"; 
 
-const JWT_SECRET = process.env.JWT_SECRET || "safe-build-secret";
+const JWT_SECRET = process.env.JWT_SECRET || "build-time-safe-secret";
 
 if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
   console.warn("UPOZORENJE: JWT_SECRET nije pronađen u okruženju.");
