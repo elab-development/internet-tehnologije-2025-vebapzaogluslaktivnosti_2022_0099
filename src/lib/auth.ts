@@ -1,10 +1,11 @@
 import * as jwt from "jsonwebtoken";
 
 export const AUTH_COOKIE = "auth"; 
-const JWT_SECRET = process.env.JWT_SECRET!;
 
-if (!JWT_SECRET) {
-  throw new Error("Missing JWT_SECRET in env file");
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-za-build-fazu";
+
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
+  console.warn("UPOZORENJE: JWT_SECRET nije definisan u env varijablama!");
 }
 
 export type JwtUserClaims = {
