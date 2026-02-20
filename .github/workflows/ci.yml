@@ -1,0 +1,33 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop, feature/ci-cd, feature/testovi ]
+  pull_request:
+    branches: [ main, develop, feature/testovi ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout koda
+        uses: actions/checkout@v4
+
+      - name: Postavljanje Node.js okruženja
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' 
+          cache: 'npm'
+
+      - name: Instalacija zavisnosti
+        run: npm install
+
+      - name: Pokretanje automatizovanih testova
+        run: npm test
+
+      - name: Build aplikacije
+        run: npm run build
+        env:
+          DATABASE_URL: "postgres://postgres:postgres@localhost:5432/db"
+          JWT_SECRET: "dummy_secret_for_ci"
