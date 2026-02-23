@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, develop, feature/ci-cd, feature/testovi ]
   pull_request:
-    branches: [ main, develop, feature/testovi ]
+    branches: [ main, develop, feature/ci-cd, feature/testovi ]
 
 jobs:
   build:
@@ -17,7 +17,7 @@ jobs:
       - name: Postavljanje Node.js okruženja
         uses: actions/setup-node@v4
         with:
-          node-version: '20' 
+          node-version: '20'
           cache: 'npm'
 
       - name: Instalacija zavisnosti
@@ -30,4 +30,5 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: "postgres://postgres:postgres@localhost:5432/db"
-          JWT_SECRET: "dummy_secret_for_ci"
+          JWT_SECRET: "dummy_secret_for_ci_build"
+          API_URL: "http://localhost:3000"
