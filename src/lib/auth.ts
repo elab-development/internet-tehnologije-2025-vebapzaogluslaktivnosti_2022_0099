@@ -2,10 +2,10 @@ import * as jwt from "jsonwebtoken";
 
 export const AUTH_COOKIE = "auth"; 
 
-const JWT_SECRET = process.env.JWT_SECRET || "privremeni-kljuc-samo-za-build";
+const JWT_SECRET = process.env.JWT_SECRET || "build-safe-fallback-secret";
 
 if (!process.env.JWT_SECRET && process.env.NODE_ENV === "production") {
-  console.warn("UPOZORENJE: JWT_SECRET nije pronađen. Koristi se fallback.");
+  console.warn("UPOZORENJE: JWT_SECRET nedostaje u produkciji!");
 }
 
 export type JwtUserClaims = {
@@ -20,25 +20,27 @@ export function signAuthToken(claims: JwtUserClaims) {
 }
 
 export function verifyAuthToken(token: string): JwtUserClaims {
-  const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & JwtUserClaims;
-  
-  if (!payload || !payload.sub || !payload.email || !payload.role) {
-    throw new Error("Invalid token claims");
+  try {
+    const payload = jwt.verify(token, JWT_SECRET) as jwt.JwtPayload & JwtUserClaims;
+    if (!payload || !payload.sub || !payload.email || !payload.role) {
+      throw new Error("Invalid token claims");
+    }
+    return { 
+      sub: payload.sub, 
+      email: payload.email, 
+      role: payload.role,
+      name: payload.name 
+    };
+  } catch (err) {
+    throw new Error("Invalid token");
   }
-
-  return { 
-    sub: payload.sub, 
-    email: payload.email, 
-    role: payload.role,
-    name: payload.name 
-  };
 }
 
 export function cookieOpts() {
   return {
-    httpOnly: true, // zaštita od XSS 
-    sameSite: "lax" as const, // zaštita od CSRF 
-    secure: process.env.NODE_ENV === "production",
+    httpOnly: true, 
+    sameSite: "lax" as const, 
+    secure: process.env.NODE_ENV === "production", 
     path: "/",
     maxAge: 60 * 60 * 24 * 7 
   };
